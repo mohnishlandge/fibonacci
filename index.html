@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        background-color: #50a2a7;
+      }
+      #canvas {
+        width: 100%;
+        background-color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script>
+      /*
+Use the spacebar to pause and restart the animation.
+
+The fibonacci sequence was discovered by Leonardo of Pisa in the thirteenth century when he noticed the pattern in breeding rabbits. Each sucessive number is eaual to the sum of the two previons numbers: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, and so on. After the first few, the proportion between each number and the next is 1.61. Da Vinci illustrated the geometric result of the pattern - the golden ratio or Phi, which he called the Divine Proportion, three hundred years after . The pattern and proportion were actually known by Egyptians and Indians hundreds before these Italians caught wind.
+
+This simple pattern and its resulting ratio and spiral turn up all over nature including in: flowers, hurricanes, spiral galaxies, the nautilus shell, asthetic human proportions - especially the human face, cracking mud, insects, and more.
+
+It has been used by humans in the pyramids and other archetecture, art composition, logo design, animal husbandry, and betting.
+
+In Romans, chapter 1, the Apostle Paul instructs us that God's invisible qualites: His eternal power and divine nature have been revealed to us by what God has created in the Earth and sky. King David wrote:
+
+"When I look at your heavens, the work of your fingers,
+the moon and the stars, which you have set in place, 
+what is man that you are mindful of him,
+and the son of man that you care for him?" - Psalm 8:3,4
+
+Special thanks to @JesseChil for suggesting the use of requestAnimationFrame over setInterval.
+*/
+
+      var canvas = document.getElementById('canvas')
+      var context = canvas.getContext('2d')
+      var width = window.innerWidth
+      var height = window.innerHeight
+      canvas.height = height
+      canvas.width = width
+
+      // Each sucessive square is stacked counter-clockwise around the existing group. This array of pairs will instruct the direction each arc takes within the square.
+      var directions = [
+        [-1, -1],
+        [-1, 1],
+        [1, 1],
+        [1, -1],
+      ]
+
+      // This will help instruct where each successive arc is placed.
+      var arcs = [
+        [0, 1.5],
+        [1.5, 1],
+        [1, 0.5],
+        [0.5, 0],
+      ]
+
+      var colors = [['#fff'], ['#fff'], ['#fff'], ['#fff']]
+      var size = 5
+      var startX = (width - size) / 2
+      var startY = (height - 5) / 2
+
+      function fibonacciSpiral(
+        startX,
+        startY,
+        size,
+        lastValue,
+        value,
+        step,
+        xAdjust,
+        yAdjust,
+        lastYAdjust,
+        i
+      ) {
+        if (i > 3) {
+          i = 0
+        }
+        if (step == 1) {
+          var yAdjust = size
+          //var lastYAdjust = 10;
+        }
+        if (value > 6008) {
+          return
+        } else {
+          context.arc(
+            startX + xAdjust * directions[i][0],
+            startY + yAdjust * directions[i][1],
+            value * size,
+            arcs[i][0] * Math.PI,
+            arcs[i][1] * Math.PI,
+            true
+          )
+          i++
+          if (step % 2 == 0) {
+            var old = yAdjust
+            fibonacciSpiral(
+              startX,
+              startY,
+              size,
+              value,
+              lastValue + value,
+              step + 1,
+              xAdjust,
+              Math.pow(Math.sqrt(lastYAdjust) + Math.sqrt(yAdjust), 2),
+              old,
+              i
+            )
+          } else {
+            fibonacciSpiral(
+              startX,
+              startY,
+              size,
+              value,
+              lastValue + value,
+              step + 1,
+              xAdjust + yAdjust,
+              yAdjust,
+              lastYAdjust,
+              i
+            )
+          }
+        }
+      }
+
+      var ways = [
+        [-1, -1],
+        [-1, -1],
+        [-1, +1],
+        [+1, -1],
+      ]
+
+      function drawRect(
+        startX,
+        startY,
+        size,
+        moveX,
+        moveY,
+        lastValue,
+        value,
+        i
+      ) {
+        if (value > 6008) {
+          return
+        }
+        context.fillStyle = colors[i]
+        context.fillRect(
+          startX + ways[i][0] * moveX * size,
+          startY + ways[i][1] * moveY * size,
+          value * size,
+          value * size
+        )
+        context.rect(
+          startX + ways[i][0] * moveX * size,
+          startY + ways[i][1] * moveY * size,
+          value * size,
+          value * size
+        )
+        if (i == 3) {
+          drawRect(
+            startX,
+            startY,
+            size,
+            moveX + moveY,
+            lastValue + value + moveY,
+            value,
+            lastValue + value,
+            0
+          )
+        } else if (i == 0) {
+          drawRect(
+            startX,
+            startY,
+            size,
+            lastValue + value + moveX,
+            moveY,
+            value,
+            lastValue + value,
+            i + 1
+          )
+        } else if (i == 1) {
+          drawRect(
+            startX,
+            startY,
+            size,
+            moveX,
+            value - moveY,
+            value,
+            lastValue + value,
+            i + 1
+          )
+        } else {
+          drawRect(
+            startX,
+            startY,
+            size,
+            value - moveX,
+            lastValue - moveY,
+            value,
+            lastValue + value,
+            i + 1
+          )
+        }
+      }
+
+      // I arrived at the value for size visually, just trying to eliminate jumpiness. There should be a way to compute this precisely...
+      var size = 0.2
+      var startStop
+      function animate() {
+        if (size > 1.3) {
+          size = 0.2
+        }
+
+        context.beginPath()
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        fibonacciSpiral(startX, startY, size, 1, 1, 0, 0, 0, 0, 0)
+        drawRect(startX, startY, size, 0, 1, 1, 1, 0)
+
+        context.strokeStyle = '#000'
+        context.lineWidth = 1
+        context.stroke()
+        size = size * 1.027
+        startStop = requestAnimationFrame(animate)
+      }
+      requestAnimationFrame(animate)
+
+      var running = true
+      document.body.onkeyup = function (e) {
+        if (e.keyCode == 32) {
+          if (running == true) {
+            cancelAnimationFrame(startStop)
+            running = false
+          } else {
+            requestAnimationFrame(animate)
+            running = true
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
